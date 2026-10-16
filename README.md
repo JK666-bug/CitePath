@@ -1,2 +1,2 @@
 # CitePath
-a agent AI to help study
+an agent AI to help study

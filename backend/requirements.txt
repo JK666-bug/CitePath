@@ -5,3 +5,7 @@ pymysql==1.1.2
 pymupdf==1.26.5
 pymilvus==2.6.2
 fastembed==0.7.4
+langchain-openai==1.1.7
+langchain-core==1.2.7
+openai==2.54.0
+python-dotenv==1.2.4

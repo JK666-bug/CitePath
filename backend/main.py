@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
+from agent.llm import ping
 from db.uploads import read_upload, save_upload
 from ingest.pdf_reader import read_pdf
 
@@ -21,6 +22,17 @@ MAX_BRIEF_LENGTH = 10000
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/agent/ping")
+def agent_ping():
+    try:
+        reply = ping()
+    except RuntimeError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="模型接口调用失败") from error
+    return {"reply": reply}
 
 
 @app.post("/api/uploads")

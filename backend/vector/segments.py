@@ -29,6 +29,48 @@ def sync_pages(document_id: int, pages: list[dict]) -> int:
     return len(rows)
 
 
+def search(document_ids: list[int], query: str, limit: int = 8) -> list[dict]:
+    ids = [int(item) for item in document_ids]
+    if not ids:
+        return []
+    client = _client()
+    if not client.has_collection(COLLECTION):
+        return []
+    client.load_collection(COLLECTION)
+    vector = _embed([query])[0]
+    listed = ", ".join(str(item) for item in ids)
+    found = client.search(
+        collection_name=COLLECTION,
+        data=[vector],
+        filter=f"document_id in [{listed}]",
+        limit=limit,
+        output_fields=["document_id", "page_number", "chapter", "text"],
+        search_params={"metric_type": "COSINE"},
+    )
+    hits = found[0] if found else []
+    rows = []
+    allowed = set(ids)
+    for hit in hits:
+        entity = hit.get("entity") or hit
+        document_id = int(entity["document_id"])
+        if document_id not in allowed:
+            continue
+        rows.append(
+            {
+                "document_id": document_id,
+                "page_number": int(entity["page_number"]),
+                "chapter": entity.get("chapter") or "",
+                "text": entity.get("text") or "",
+                "score": float(hit.get("distance", 0)),
+            }
+        )
+    return rows
+
+
+def delete_segments(document_id: int) -> None:
+    _delete_document(_client(), int(document_id))
+
+
 def segments_for(document_id: int) -> list[dict]:
     client = _client()
     if not client.has_collection(COLLECTION):
@@ -55,7 +97,7 @@ def _pieces(document_id: int, pages: list[dict]) -> list[dict]:
                     "document_id": int(document_id),
                     "page_number": int(page["page_number"]),
                     "chunk_index": index,
-                    "chapter": (page.get("chapter") or "未标注")[:255],
+                    "chapter": (page.get("chapter") or "Untitled")[:255],
                     "text": chunk,
                 }
             )

@@ -23,7 +23,7 @@ def read_pdf(data: bytes) -> list[dict]:
 
 
 def _chapter_for_page(outline: list, page_number: int) -> str:
-    chapter = "未标注"
+    chapter = "Untitled"
     for _level, title, start_page in outline:
         if start_page > page_number:
             break

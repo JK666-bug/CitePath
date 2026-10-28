@@ -14,7 +14,7 @@ DEFAULT_API_VERSION = "2025-04-01-preview"
 def chat_model() -> AzureChatOpenAI:
     key = os.environ.get("HKU_API_KEY", "").strip()
     if not key:
-        raise RuntimeError("请在 backend/.env 里填写 HKU_API_KEY")
+        raise RuntimeError("Set HKU_API_KEY in backend/.env")
     deployment = os.environ.get("HKU_DEPLOYMENT", DEFAULT_DEPLOYMENT).strip()
     api_version = os.environ.get("HKU_API_VERSION", DEFAULT_API_VERSION).strip()
     return AzureChatOpenAI(
@@ -22,6 +22,9 @@ def chat_model() -> AzureChatOpenAI:
         api_version=api_version,
         api_key=key,
         model=deployment,
+        temperature=0,
+        timeout=60,
+        max_retries=1,
         default_headers={
             "api-key": key,
             "Ocp-Apim-Subscription-Key": key,

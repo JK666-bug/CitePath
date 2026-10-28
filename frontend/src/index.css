@@ -1,6 +1,42 @@
+:root {
+  color: #1d2430;
+  background: #f3efe6;
+  font-family: "Source Sans 3", "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  --ink: #1d2430;
+  --muted: #5d6876;
+  --line: #e4dccf;
+  --paper: #fffdf8;
+  --teal: #0e5f5c;
+  --teal-deep: #0a3f3e;
+  --cream: #f3efe6;
+  --danger: #8d3040;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  background: #f3f6f8;
-  color: #1c2830;
-  font-family: "Segoe UI", sans-serif;
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 420px at 0% -10%, rgba(14, 95, 92, 0.08), transparent 60%),
+    var(--cream);
+  color: var(--ink);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+.mark {
+  font-family: "Source Serif 4", "Palatino Linotype", serif;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }

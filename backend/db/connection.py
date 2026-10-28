@@ -14,4 +14,5 @@ def connect():
         charset="utf8mb4",
         cursorclass=DictCursor,
         autocommit=False,
+        init_command="SET time_zone = '+08:00'",
     )

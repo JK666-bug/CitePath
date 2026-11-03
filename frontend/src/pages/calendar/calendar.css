@@ -1,0 +1,325 @@
+.calendar-progress {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 26px;
+}
+
+.calendar-progress .panel {
+  padding: 18px 20px;
+}
+
+.calendar-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.calendar-toolbar h2 {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.calendar-filter {
+  width: min(220px, 35%);
+}
+
+.calendar-filter select {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.calendar-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.calendar-workspace.has-overview {
+  grid-template-columns:
+    minmax(0, 1fr) 285px;
+}
+
+.calendar-board {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: white;
+  min-width: 0;
+}
+
+.month-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.month-grid th {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 12px 0;
+  background: #fffcf8;
+}
+
+.month-grid td {
+  padding: 0;
+  border-top: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  vertical-align: top;
+  height: 93px;
+}
+
+.month-grid td:last-child {
+  border-right: 0;
+}
+
+.calendar-date-button {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 93px;
+  padding: 7px;
+  border: 0;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+}
+
+.calendar-date-button:hover {
+  background: #fffaf3;
+}
+
+.selected-date .calendar-date-button {
+  background: #fdf2e7;
+  box-shadow:
+    inset 0 0 0 1px #c9a587;
+}
+
+.outside-month .calendar-date-number {
+  color: #c5b9af;
+}
+
+.calendar-date-number {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  margin-bottom: 5px;
+  border-radius: 50%;
+}
+
+.calendar-date-number.is-today {
+  background: var(--primary);
+  color: white;
+}
+
+.calendar-cell-tasks {
+  display: grid;
+  gap: 4px;
+}
+
+.calendar-task {
+  display: block;
+  background: #faf0e4;
+  border-left: 2px solid #c5976e;
+  border-radius: 4px;
+  padding: 4px 5px;
+  min-width: 0;
+}
+
+.calendar-task strong {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-task small {
+  display: block;
+  font-size: 8px;
+  color: #9c836f;
+}
+
+.calendar-task.type-practice {
+  background: #f5f0f8;
+  border-color: #a291b3;
+}
+
+.calendar-task.type-review {
+  background: #f5f1e7;
+  border-color: #b7a477;
+}
+
+.calendar-task.is-completed {
+  opacity: .5;
+}
+
+.calendar-task.is-completed strong {
+  text-decoration: line-through;
+}
+
+.more-tasks {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.day-overview {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: white;
+  padding: 18px;
+  min-width: 0;
+}
+
+.day-overview > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.day-overview h2 {
+  font-size: 17px;
+  font-family: Georgia, serif;
+}
+
+.day-overview .eyebrow {
+  font-size: 9px;
+  margin-bottom: 6px;
+}
+
+.day-task {
+  padding: 17px 0;
+  border-top: 1px solid var(--line);
+}
+
+.day-task h3 {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.day-task > p {
+  margin-bottom: 10px;
+}
+
+.day-task .source-list {
+  margin-bottom: 10px;
+}
+
+.day-empty {
+  padding: 20px 0;
+}
+
+.calendar-progress .calendar-pace-title {
+  font-size: 13px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.calendar-progress .pace-heading {
+  margin-bottom: 7px;
+}
+
+.calendar-progress .pace-summary {
+  margin-bottom: 13px;
+  font-size: 11px;
+}
+
+.calendar-progress .pace-labels {
+  margin-bottom: 0;
+}
+
+@media (max-width: 1180px) {
+  .calendar-workspace.has-overview {
+    grid-template-columns:
+      minmax(0, 1fr) 230px;
+    gap: 12px;
+  }
+
+  .day-overview {
+    padding: 13px;
+  }
+
+  .calendar-date-button {
+    padding: 5px;
+  }
+}
+
+@media (max-width: 850px) {
+  .calendar-workspace.has-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendar-progress {
+    gap: 10px;
+  }
+
+  .calendar-progress .panel {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .calendar-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .calendar-filter {
+    width: 100%;
+  }
+
+  .calendar-toolbar h2 {
+    font-size: 19px;
+  }
+
+  .calendar-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .month-grid td,
+  .calendar-date-button {
+    min-height: 78px;
+    height: 78px;
+  }
+
+  .calendar-task small {
+    display: none;
+  }
+
+  .calendar-task {
+    padding: 3px;
+  }
+
+  .calendar-task strong {
+    font-size: 8px;
+  }
+}
+
+@media
+  (max-height: 850px) and
+  (min-width: 851px) {
+  .month-grid td,
+  .calendar-date-button {
+    min-height: 69px;
+    height: 69px;
+  }
+
+  .calendar-task {
+    padding: 2px 4px;
+  }
+
+  .calendar-task small {
+    display: none;
+  }
+}

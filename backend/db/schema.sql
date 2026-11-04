@@ -29,8 +29,10 @@ CREATE TABLE IF NOT EXISTS documents (
   id INT PRIMARY KEY AUTO_INCREMENT,
   course_id INT NOT NULL,
   filename VARCHAR(255) NOT NULL,
+  content_hash CHAR(64) NULL,
   ingest_status VARCHAR(16) NOT NULL DEFAULT 'pending',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_course_content_hash (course_id, content_hash),
   CONSTRAINT fk_documents_course FOREIGN KEY (course_id) REFERENCES courses (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

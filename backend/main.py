@@ -1,3 +1,4 @@
+import hashlib
 import os
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from db.courses import (
     list_courses,
     owns_document,
 )
-from db.uploads import save_document
+from db.uploads import existing_upload, save_document
 from ingest.pdf_reader import read_pdf
 from vector.segments import delete_segments
 
@@ -136,13 +137,17 @@ async def add_document(
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail="The PDF is empty")
+    digest = hashlib.sha256(data).hexdigest()
+    existing = existing_upload(course_id, digest)
+    if existing is not None:
+        return existing
     try:
         pages = read_pdf(data)
     except Exception as error:
         raise HTTPException(status_code=400, detail="This PDF could not be read") from error
     if not pages:
         raise HTTPException(status_code=400, detail="This PDF has no pages")
-    return save_document(course_id, filename, pages)
+    return save_document(course_id, filename, pages, digest)
 
 
 @app.delete("/api/courses/{course_id}/documents/{document_id}")

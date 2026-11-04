@@ -6,10 +6,11 @@ from langchain_core.tools import tool
 from agent.llm import chat_model
 from db.courses import get_course
 from db.qa import insert_record, load_page_bodies
+from vector.rerank import rerank
 from vector.segments import search
 
-MIN_COSINE = 0.45
 PAGE_LIMIT = 4
+CANDIDATES = 30
 PAGE_CHARS = 8000
 MAX_ANSWER = 8000
 REFUSAL = "The lecture notes do not support an answer to this question."
@@ -94,16 +95,21 @@ def _retrieve_with_tool(document_ids: list[int], question: str) -> list[dict]:
 
 def _retrieve(document_ids: list[int], query: str) -> list[dict]:
     allowed_ids = set(document_ids)
-    ranked: dict[tuple[int, int], float] = {}
-    for hit in search(document_ids, query):
-        if hit["score"] < MIN_COSINE or hit["document_id"] not in allowed_ids:
-            continue
+    hits = [
+        hit
+        for hit in search(document_ids, query, limit=CANDIDATES)
+        if hit["document_id"] in allowed_ids and str(hit.get("text") or "").strip()
+    ]
+    ordered = rerank(query, hits)
+    best: dict[tuple[int, int], float] = {}
+    for hit in ordered:
         key = (hit["document_id"], hit["page_number"])
-        if key not in ranked or hit["score"] > ranked[key]:
-            ranked[key] = hit["score"]
-    if not ranked:
+        if key not in best or hit["score"] > best[key]:
+            best[key] = hit["score"]
+    if not best:
         return []
-    top = sorted(ranked, key=ranked.get, reverse=True)[:PAGE_LIMIT]
+    top = sorted(best, key=best.get, reverse=True)[:PAGE_LIMIT]
+    ranked = best
     stored = load_page_bodies(top)
     pages = []
     for key in top:

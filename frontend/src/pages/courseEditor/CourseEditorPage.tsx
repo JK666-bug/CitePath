@@ -26,7 +26,10 @@ import {
 } from '../../shared/components/UI'
 
 import type { CourseDetail } from '../course/types'
-import { uploadMaterial } from '../course/api'
+import {
+  duplicateMessage,
+  uploadMaterial,
+} from '../course/api'
 
 import { createCourse } from './api'
 
@@ -239,6 +242,8 @@ function Editor({
           setCreatedId(id)
         }
 
+        const duplicates: string[] = []
+
         for (const file of files) {
           if (
             uploaded.includes(
@@ -252,7 +257,17 @@ function Editor({
             `Uploading and processing ${file.name}…`,
           )
 
-          await uploadMaterial(id, file)
+          const result =
+            await uploadMaterial(id, file)
+
+          if (result.duplicate) {
+            duplicates.push(
+              duplicateMessage(
+                file.name,
+                result.filename,
+              ),
+            )
+          }
 
           setUploaded((current) => [
             ...current,
@@ -264,7 +279,9 @@ function Editor({
         await refreshCourses()
 
         setStatus(
-          'Course settings and selected PDF materials have been saved. Automatic analysis is awaiting the planning service.',
+          duplicates.length
+            ? `Course settings saved. ${duplicates.join(' ')} Automatic analysis is awaiting the planning service.`
+            : 'Course settings and selected PDF materials have been saved. Automatic analysis is awaiting the planning service.',
         )
       }
     } catch (reason) {

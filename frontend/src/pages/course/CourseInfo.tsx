@@ -15,6 +15,7 @@ import MaterialPicker, {
 
 import {
   deleteMaterial,
+  duplicateMessage,
   uploadMaterial,
 } from './api'
 
@@ -88,6 +89,8 @@ export default function CourseInfo({
     }
 
     setBusy(true)
+    const duplicates: string[] = []
+    let saved = 0
 
     try {
       for (const file of files) {
@@ -95,10 +98,21 @@ export default function CourseInfo({
           `Uploading and processing ${file.name}…`,
         )
 
-        await uploadMaterial(
+        const result = await uploadMaterial(
           course.id,
           file,
         )
+
+        if (result.duplicate) {
+          duplicates.push(
+            duplicateMessage(
+              file.name,
+              result.filename,
+            ),
+          )
+        } else {
+          saved += 1
+        }
 
         setFiles((current) =>
           current.filter(
@@ -109,9 +123,19 @@ export default function CourseInfo({
         )
       }
 
-      setMessage(
-        'Materials saved. A new study plan requires the planning service, which is not connected yet.',
-      )
+      const parts: string[] = []
+
+      if (saved > 0) {
+        parts.push(
+          'Materials saved. A new study plan requires the planning service, which is not connected yet.',
+        )
+      }
+
+      if (duplicates.length) {
+        parts.push(duplicates.join(' '))
+      }
+
+      setMessage(parts.join(' '))
     } catch (reason) {
       setMessage('')
 

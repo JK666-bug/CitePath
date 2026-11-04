@@ -13,6 +13,7 @@ def read_pdf(data: bytes) -> list[dict]:
         return []
     document = _convert(data)
     chapters = _chapters(document, page_count)
+    owned, carried = _split_cross_page_text(document)
     pages = []
     for number in range(1, page_count + 1):
         exported = document.export_to_markdown(
@@ -24,7 +25,13 @@ def read_pdf(data: bytes) -> list[dict]:
             include_annotations=False,
             include_picture_classification=False,
         )
-        body = strip_page_furniture(exported or "")
+        exported = exported or ""
+        for full, head in owned.get(number, []):
+            exported = exported.replace(full, head, 1)
+        tails = carried.get(number, [])
+        if tails:
+            exported = "\n\n".join([*tails, exported])
+        body = strip_page_furniture(exported)
         pages.append(
             {
                 "page_number": number,
@@ -104,6 +111,53 @@ def _chapters(document, page_count: int) -> dict[int, str]:
             current = first_header[number]
         chapters[number] = current
     return chapters
+
+
+def _split_cross_page_text(document) -> tuple[dict[int, list[tuple[str, str]]], dict[int, list[str]]]:
+    # Docling merges a paragraph that runs onto the next page into one item, and
+    # a per-page export places all of it on the first page. Each provenance entry
+    # gives the characters printed on its page, so the rest is moved back to the
+    # top of the page where it was printed.
+    from docling_core.types.doc import ContentLayer
+
+    owned: dict[int, list[tuple[str, str]]] = {}
+    carried: dict[int, list[str]] = {}
+    for item, _level in document.iterate_items(
+        included_content_layers={ContentLayer.BODY}
+    ):
+        text = getattr(item, "text", None)
+        provs = getattr(item, "prov", None) or []
+        if not isinstance(text, str) or len({prov.page_no for prov in provs}) < 2:
+            continue
+        parts = _page_parts(text, provs)
+        if parts is None:
+            continue
+        first_page, head = parts[0]
+        owned.setdefault(first_page, []).append((text, head))
+        for page_no, piece in parts[1:]:
+            carried.setdefault(page_no, []).append(piece)
+    return owned, carried
+
+
+def _page_parts(text: str, provs) -> list[tuple[int, str]] | None:
+    parts: list[tuple[int, str]] = []
+    for prov in provs:
+        span = getattr(prov, "charspan", None)
+        if not span or len(span) != 2:
+            return None
+        start, end = int(span[0]), int(span[1])
+        if not 0 <= start <= end <= len(text):
+            return None
+        piece = text[start:end].strip()
+        if not piece:
+            continue
+        if parts and parts[-1][0] == prov.page_no:
+            parts[-1] = (prov.page_no, f"{parts[-1][1]} {piece}")
+        else:
+            parts.append((prov.page_no, piece))
+    if len(parts) < 2:
+        return None
+    return parts
 
 
 def _page_no(item) -> int | None:

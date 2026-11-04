@@ -22,6 +22,13 @@ SEARCH_LIMIT = 30
 SEPARATORS = ("\n\n", "\n", "。", "！", "？", ". ", "! ", "? ", "；", "; ", "，", ", ", " ", "")
 _HEADING = re.compile(r"^#{1,6}\s+\S")
 _LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+\S")
+_SENTENCE_END = re.compile(r"[.!?;](?=\s|$)|[。！？；]")
+_CLOSED_LINE = re.compile(r"[.!?。！？;；:：]['\"”’)\]]*$")
+# A sentence broken by a page break is indexed once more as a bridge piece on
+# the earlier page. Each side is capped so the whole sentence fits the
+# embedding model.
+BRIDGE_HEAD_TOKENS = 60
+BRIDGE_TAIL_TOKENS = 45
 
 _model = None
 
@@ -136,13 +143,92 @@ def chunk_text(text: str) -> list[str]:
     return [chunk[:MAX_CHARS] for chunk in chunks if chunk.strip()]
 
 
+def bridge_text(body: str, next_body: str) -> str | None:
+    head = _open_sentence(body)
+    if head is None:
+        return None
+    tail = _continued_sentence(next_body)
+    if tail is None:
+        return None
+    head = _last_tokens(head, BRIDGE_HEAD_TOKENS)
+    tail = _first_tokens(tail, BRIDGE_TAIL_TOKENS)
+    if not head or not tail:
+        return None
+    return f"{head} {tail}"
+
+
+def _open_sentence(body: str) -> str | None:
+    lines = [line for line in body.strip().split("\n") if line.strip()]
+    if not lines:
+        return None
+    last = lines[-1].strip()
+    if _HEADING.match(last) or last.startswith("|") or _CLOSED_LINE.search(last):
+        return None
+    paragraph = []
+    for line in reversed(lines):
+        stripped = line.strip()
+        if _HEADING.match(stripped) or stripped.startswith("|"):
+            break
+        paragraph.insert(0, stripped)
+    text = " ".join(paragraph)
+    ends = list(_SENTENCE_END.finditer(text))
+    head = text[ends[-1].end():] if ends else text
+    head = re.sub(r"^\s*(?:[-*+]|\d+[.)])\s+", "", head).strip()
+    return head or None
+
+
+def _continued_sentence(next_body: str) -> str | None:
+    lines = []
+    for line in next_body.strip().split("\n"):
+        stripped = line.strip()
+        if not stripped:
+            break
+        lines.append(stripped)
+    if not lines:
+        return None
+    first = lines[0]
+    if _HEADING.match(first) or first.startswith("|") or _LIST_ITEM.match(first):
+        return None
+    text = " ".join(lines)
+    end = _SENTENCE_END.search(text)
+    tail = text[: end.end()] if end else text
+    return tail.strip() or None
+
+
+def _first_tokens(text: str, limit: int) -> str:
+    tokenizer = _tokenizer()
+    ids = tokenizer.encode(text, add_special_tokens=False).ids
+    if len(ids) <= limit:
+        return text.strip()
+    return tokenizer.decode(ids[:limit]).strip()
+
+
+def _last_tokens(text: str, limit: int) -> str:
+    tokenizer = _tokenizer()
+    ids = tokenizer.encode(text, add_special_tokens=False).ids
+    if len(ids) <= limit:
+        return text.strip()
+    return tokenizer.decode(ids[-limit:]).strip()
+
+
 def _pieces(document_id: int, pages: list[dict]) -> list[dict]:
     pieces = []
+    by_number = {
+        int(page["page_number"]): str(page.get("body") or "")
+        for page in pages
+        if page.get("usable")
+    }
     for page in pages:
         body = page.get("body") or ""
         if not page.get("usable") or not str(body).strip():
             continue
-        for index, chunk in enumerate(chunk_text(str(body))):
+        chunks = chunk_text(str(body))
+        next_body = by_number.get(int(page["page_number"]) + 1)
+        if next_body:
+            bridge = bridge_text(str(body), next_body)
+            if bridge:
+                chunks.append(bridge)
+        for index, chunk in enumerate(chunks):
             pieces.append(
                 {
                     "document_id": int(document_id),

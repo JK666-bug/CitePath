@@ -1,17 +1,30 @@
+import pymysql
+
 from db.connection import connect
-from vector.segments import sync_pages
+from vector.segments import has_segments, sync_pages
 
 
-def save_document(course_id: int, filename: str, pages: list[dict]) -> dict:
+def existing_upload(course_id: int, content_hash: str) -> dict | None:
+    row = _hash_row(course_id, content_hash)
+    if row is None:
+        return None
+    usable = int(row["usable_page_count"] or 0)
+    if usable > 0 and not has_segments(row["id"]):
+        count = sync_pages(row["id"], _load_pages(row["id"]))
+        return _payload(row, count, False)
+    return _payload(row, 0, True)
+
+
+def save_document(course_id: int, filename: str, pages: list[dict], content_hash: str) -> dict:
     connection = connect()
     try:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO documents (course_id, filename, ingest_status)
-                VALUES (%s, %s, 'pending')
+                INSERT INTO documents (course_id, filename, content_hash, ingest_status)
+                VALUES (%s, %s, %s, 'pending')
                 """,
-                (course_id, filename),
+                (course_id, filename, content_hash),
             )
             document_id = cursor.lastrowid
             cursor.executemany(
@@ -35,6 +48,12 @@ def save_document(course_id: int, filename: str, pages: list[dict]) -> dict:
                 (document_id,),
             )
         connection.commit()
+    except pymysql.err.IntegrityError:
+        connection.rollback()
+        existing = existing_upload(course_id, content_hash)
+        if existing is not None:
+            return existing
+        raise
     except Exception:
         connection.rollback()
         raise
@@ -47,4 +66,55 @@ def save_document(course_id: int, filename: str, pages: list[dict]) -> dict:
         "page_count": len(pages),
         "usable_page_count": usable,
         "milvus_segments": sync_pages(document_id, pages),
+        "duplicate": False,
+    }
+
+
+def _hash_row(course_id: int, content_hash: str) -> dict | None:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT d.id, d.filename,
+                       COUNT(p.id) AS page_count,
+                       SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count
+                FROM documents d
+                LEFT JOIN pages p ON p.document_id = d.id
+                WHERE d.course_id = %s AND d.content_hash = %s
+                GROUP BY d.id, d.filename
+                """,
+                (course_id, content_hash),
+            )
+            return cursor.fetchone()
+    finally:
+        connection.close()
+
+
+def _load_pages(document_id: int) -> list[dict]:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT page_number, chapter, body, usable
+                FROM pages
+                WHERE document_id = %s
+                ORDER BY page_number
+                """,
+                (document_id,),
+            )
+            return list(cursor.fetchall())
+    finally:
+        connection.close()
+
+
+def _payload(row: dict, segments: int, duplicate: bool) -> dict:
+    return {
+        "document_id": row["id"],
+        "filename": row["filename"],
+        "page_count": int(row["page_count"] or 0),
+        "usable_page_count": int(row["usable_page_count"] or 0),
+        "milvus_segments": segments,
+        "duplicate": duplicate,
     }

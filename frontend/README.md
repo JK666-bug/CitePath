@@ -1,32 +1,631 @@
-# React + TypeScript + Vite
+# CitePath 前端
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+CitePath 是一个围绕课程资料、学习规划、章节练习和引用问答组织学习过程的系统。
 
-Currently, two official plugins are available:
+当前前端采用 React、TypeScript 和 Vite，实现了全英文界面、登录保护、课程管理、资料上传和独立问答，并提供学习规划、日历、练习与报告的完整界面演示。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+本说明按 2026 年 11 月 3 日的实际文件编写。当前 `src` 中共有 50 个源码与样式文件。
 
-## React Compiler
+## 一、技术组成
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| 技术 | 当前用途 |
+| --- | --- |
+| React | 页面与组件 |
+| TypeScript | 数据类型和静态检查 |
+| Vite | 开发服务器、接口代理和生产构建 |
+| lucide-react | 页面图标 |
+| CSS | 配色、布局和屏幕适配 |
+| React Context | 跨页面共享课程与演示状态 |
+| 浏览器 History API | 页面导航及前进、后退 |
+| fetch | 请求后端接口 |
+| localStorage | 独立保存界面演示状态 |
+| Oxlint | 源码检查 |
 
-## Expanding the Oxlint configuration
+当前没有使用 React Router、Redux 或其他状态管理框架。
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+前端依赖通过 npm 管理，不需要 Python venv 或 Conda。Python 虚拟环境属于后端。
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## 二、功能实现状态
+
+### 已接入真实接口
+
+- 注册、登录、登录状态检查、退出。
+- 当前用户的课程列表。
+- 创建课程及保存课程配置。
+- 查看课程信息。
+- PDF 上传与删除。
+- 独立问答、引用展示和证据不足说明。
+
+### 已完成界面及固定演示
+
+- 课程进度卡片。
+- 安全动态线和时间概况。
+- 学习月历与右侧当日概览。
+- 单门课程的章节、概念和任务规划。
+- 阅读、练习及复习任务。
+- 选择题和简答题。
+- 两轮练习、错题反馈和章节报告。
+- 演示答案保存、刷新恢复和重新排期。
+
+### 等待真实后端能力
+
+- 修改真实课程设置。
+- 自动生成、读取和重新调整学习计划。
+- 真实章节练习、服务端判分与报告。
+- 真实学习任务和练习的持久化恢复。
+- PDF 在线查看或下载。
+- 历史问答读取。
+
+已经编写接口调用的功能仍需要结合本地后端环境联调。
+
+## 三、运行方式
+
+### 1. 安装依赖
+
+首次拉取项目、没有依赖目录时，在 `frontend` 中执行：
+
+```bash
+npm ci
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+已有正常可用的 `node_modules` 时，不需要每次重新安装。
+
+### 2. 启动开发服务器
+
+```bash
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+浏览器打开：
+
+```text
+http://127.0.0.1:5173/
+```
+
+登录和真实业务操作还需要后端运行在：
+
+```text
+http://127.0.0.1:8000
+```
+
+### 3. 构建
+
+```bash
+npm run build
+```
+
+该命令依次执行：
+
+1. TypeScript 项目检查。
+2. Vite 生产构建。
+
+构建产物输出到：
+
+```text
+dist/
+```
+
+构建成功不代表数据库、模型和全部业务接口都已经验收通过。
+
+### 4. 源码检查
+
+```bash
+npm run lint
+```
+
+只检查源码时可以运行：
+
+```bash
+npm run lint -- src
+```
+
+### 5. 预览构建结果
+
+先构建，再运行：
+
+```bash
+npm run preview
+```
+
+预览服务器不会自动采用 `server.proxy` 的开发代理配置。测试真实 API 时，需要另外配置可用的接口转发；日常联调优先使用开发服务器。
+
+### 6. 当前没有 test 脚本
+
+当前 `package.json` 提供：
+
+```text
+dev
+build
+lint
+preview
+```
+
+尚未提供 `test` 脚本，也没有测试目录，因此不能直接把 `npm test` 当作当前项目已有命令。
+
+## 四、目录结构
+
+```text
+frontend/
+├── public/                 静态资源
+├── src/
+│   ├── main.tsx            React 启动入口
+│   ├── App.tsx             登录检查与页面分发
+│   ├── global.css          全局基础样式
+│   ├── layout/             登录后的公共布局
+│   ├── unLogin/            登录、注册页面
+│   ├── shared/             请求、状态、导航与公共组件
+│   └── pages/
+│       ├── courses/        我的课程
+│       ├── courseEditor/   创建及编辑课程
+│       ├── calendar/       学习日历
+│       ├── course/         单门课程详情
+│       └── practice/       练习、结果及报告
+├── index.html
+├── package.json
+├── package-lock.json
+├── vite.config.ts
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+├── .oxlintrc.json
+├── .gitignore
+└── README.md
+```
+
+以下逐项说明手写源码、配置和静态资源。依赖、构建产物和缓存按目录说明，不逐一列出自动生成的内部文件。
+
+## 五、根目录文件说明
+
+| 文件 | 功能 |
+| --- | --- |
+| `package.json` | 定义项目依赖及开发、构建、检查、预览命令。 |
+| `package-lock.json` | 锁定实际安装的依赖版本和依赖关系，便于复现环境。 |
+| `index.html` | 浏览器 HTML 入口，声明英文页面、挂载节点、图标、字体资源和模块入口。 |
+| `vite.config.ts` | 配置 React 插件，将开发环境 `/api` 请求代理到后端 8000 端口。 |
+| `tsconfig.json` | TypeScript 总入口，引用前端源码和 Vite 配置各自的类型检查配置。 |
+| `tsconfig.app.json` | 检查 `src` 中的 TypeScript、TSX 和浏览器相关类型。 |
+| `tsconfig.node.json` | 检查 Vite 配置等 Node 环境文件。 |
+| `.oxlintrc.json` | 配置 React、TypeScript 等 lint 规则，包括 Hook 调用规则。 |
+| `.gitignore` | 排除依赖、构建结果、日志、部分本地配置及编辑器文件。 |
+| `README.md` | 当前前端的功能、运行方式、文件用途和维护说明。 |
+
+另外建议在本目录保存：
+
+```text
+BACKEND_INTEGRATION.zh-CN.md
+```
+
+作为中文前后端对接说明。这是本次提供的配套文档，不属于此前已有的业务源码。
+
+## 六、静态资源说明
+
+| 文件 | 功能 |
+| --- | --- |
+| `public/favicon.svg` | 浏览器标签页图标，可通过 `/favicon.svg` 访问。 |
+
+当前没有继续使用旧的 `src/assets` 图片和旧图标文件。
+
+页面中的书本、日历、练习等图标主要由 `lucide-react` 组件提供。
+
+## 七、src 根目录文件说明
+
+| 文件 | 功能 |
+| --- | --- |
+| `src/main.tsx` | 获取 HTML 挂载节点，引入 `global.css`，在 StrictMode 中启动 React 应用。 |
+| `src/App.tsx` | 检查当前用户、处理登录失效、保护业务页面、匹配 URL 并展示对应页面。 |
+| `src/global.css` | 定义全局配色、字体基础，以及按钮、表单、提示、弹窗、进度条等公共样式。 |
+
+根目录不再直接放课程列表、课程详情和问答页面。
+
+## 八、公共布局文件说明
+
+目录：
+
+```text
+src/layout/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `AppLayout.tsx` | 组织左侧导航和右侧内容，显示本地存储错误，并在页面切换时处理主内容焦点。 |
+| `Sidebar.tsx` | 展示英文主导航、真实课程列表、演示入口、当前用户及退出按钮。 |
+| `layout.css` | 控制侧栏宽度、主内容尺寸、导航选中状态及窄屏布局。 |
+
+登录和注册不使用这套业务侧栏布局。
+
+## 九、登录与注册文件说明
+
+### 登录页面
+
+目录：
+
+```text
+src/unLogin/login/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `LoginPage.tsx` | 登录表单、必填校验、提交状态、英文错误和成功跳转。 |
+| `api.ts` | 调用真实 `/api/login` 接口。 |
+
+### 注册页面
+
+目录：
+
+```text
+src/unLogin/register/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `RegisterPage.tsx` | 注册表单、用户名和密码规则、确认密码、错误提示及成功跳转。 |
+| `api.ts` | 调用真实 `/api/register` 接口。 |
+
+注册成功后后端已经设置会话，页面直接进入课程列表。
+
+## 十、shared 文件说明
+
+目录：
+
+```text
+src/shared/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `request.ts` | 封装请求、Cookie 携带、JSON 解析、英文错误、网络失败及业务 401 处理。 |
+| `session.ts` | 定义用户类型，提供获取当前用户和退出登录函数。 |
+| `router.tsx` | 封装页面跳转、链接组件、当前路径订阅和浏览器前进后退。 |
+| `format.ts` | 生成本地日期字符串、日期加减、日期差、英文日期、时长和百分比。 |
+| `StudyProvider.tsx` | 共享真实课程列表和详情，同时管理独立的演示课程、任务、答案和练习结果。 |
+
+`StudyProvider` 同时管理两类数据，但保存方式不同：
+
+- 真实课程：通过后端接口读取和保存。
+- 演示数据：保存在浏览器本地，不写入真实数据库。
+
+## 十一、登录注册公共组件说明
+
+目录：
+
+```text
+src/shared/auth/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `AuthLayout.tsx` | 登录注册公共外观，包括品牌、英文标题、学习日程示例和表单区域。 |
+| `AuthField.tsx` | 公共输入框，支持密码显隐、输入提示、禁用状态及错误关联。 |
+| `auth.css` | 已确认的登录注册配色、字号、间距、样例卡片尺寸和屏幕适配。 |
+
+该目录样式主要限定在 `.auth-page` 内，避免影响登录后的页面。
+
+## 十二、公共业务组件说明
+
+目录：
+
+```text
+src/shared/components/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `UI.tsx` | 提供页面标题、提示、演示说明、加载、空状态、弹窗、来源引用和规划未接入状态。 |
+| `PaceLine.tsx` | 计算任务时间统计，展示学习进度条及计划时间安全动态线。 |
+
+`UI.tsx` 中的主要组件：
+
+| 组件 | 功能 |
+| --- | --- |
+| `PageHeader` | 页面标题、副标题及操作按钮。 |
+| `Notice` | 普通、错误和成功提示。 |
+| `DemoNotice` | 明确说明当前使用固定界面演示。 |
+| `Loading` | 加载等待状态。 |
+| `Empty` | 没有数据时的占位状态。 |
+| `Modal` | 使用原生 dialog 实现弹窗。 |
+| `Sources` | 展示文档编号和页码，点击后显示引用信息。 |
+| `PlanningUnavailable` | 说明真实规划服务尚未接入。 |
+
+安全动态线根据计划可用时间估算完成日期，不代表知识掌握概率，也不是根据真实历史学习速度训练出的预测模型。
+
+## 十三、我的课程页面文件说明
+
+目录：
+
+```text
+src/pages/courses/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `CoursesPage.tsx` | 展示真实课程列表、课程数量、资料数量、截止时间排序、新建入口及演示卡片入口。 |
+| `CourseCard.tsx` | 展示课程名称、期限、进度、时间概况、安全动态线、分类完成情况和接下来任务。 |
+| `api.ts` | 定义课程列表类型，调用 `/api/courses` 并提取返回的课程数组。 |
+| `courses.css` | 课程卡片、进度圆环、统计区域、网格及响应式样式。 |
+
+真实课程尚无计划时，卡片显示等待状态和不可用数值，不把演示进度套到真实课程上。
+
+## 十四、课程创建与编辑文件说明
+
+目录：
+
+```text
+src/pages/courseEditor/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `CourseEditorPage.tsx` | 组合课程表单、校验、创建请求、逐个上传、异常处理和保存状态；区分真实课程与演示编辑。 |
+| `CourseForm.tsx` | 展示课程名、期限、周时间、提前完成天数及原始备注。 |
+| `MaterialPicker.tsx` | 选择多个 PDF，展示待上传文件，移除文件，并按文件信息去除重复选择。 |
+| `AnalysisDialog.tsx` | 展示保存与处理状态、错误、规划未接入说明及演示计划更新结果。 |
+| `api.ts` | 调用真实创建课程接口。 |
+| `brief.ts` | 将课程设置编码进 `student_brief`，并兼容旧课程的普通文本备注。 |
+| `courseEditor.css` | 课程表单、上传区域和待上传文件列表样式。 |
+
+### 当前保存逻辑
+
+```text
+校验
+→ 创建课程并保留编号
+→ 逐个上传资料
+→ 刷新课程数据
+→ 展示真实处理结果
+```
+
+当前没有课程更新接口，因此真实课程设置编辑处于只读状态；演示课程设置可以在本地修改并重新排期。
+
+保存弹窗目前不代表真实 AI 规划已经发生。
+
+## 十五、学习日历文件说明
+
+目录：
+
+```text
+src/pages/calendar/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `CalendarPage.tsx` | 处理月份切换、课程筛选、日期参数、今日进度、总体安排和右侧概览。 |
+| `MonthGrid.tsx` | 生成星期一开始的六周月历格子，显示日期、少量任务标题和分类。 |
+| `DayOverview.tsx` | 展示选中日期的任务、预计时间、课程、来源、状态和操作入口。 |
+| `calendar.css` | 月历、任务色块、右侧概览、选中日期及不同屏幕尺寸的布局。 |
+
+### 日期交互
+
+- 未选择日期时不显示概览。
+- 点击日期后，在桌面布局右侧显示概览，月历相应收窄。
+- 点击其他日期，直接替换概览内容。
+- 点击关闭按钮或再次点击同一日期，关闭概览。
+- 较窄屏幕使用上下布局，避免月历过度压缩。
+
+当前只有明确选择演示课程时才展示演示任务。真实课程日历等待计划服务接入。
+
+## 十六、单门课程文件说明
+
+目录：
+
+```text
+src/pages/course/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `CoursePage.tsx` | 单门课程外框、标题、编辑入口、演示重置和三个课程标签。 |
+| `CoursePlan.tsx` | 展示课程进度、安全动态线、章节、概念、顺序和任务；真实课程尚未接入规划。 |
+| `CourseInfo.tsx` | 展示课程配置、备注和资料列表，执行真实 PDF 上传、删除及刷新。 |
+| `CourseQA.tsx` | 真实提问、回答、拒答及引用展示；演示课程只展示固定问答样例。 |
+| `TaskDetails.tsx` | 任务详情弹窗，展示日期、时长、概念、来源及完成或练习入口。 |
+| `api.ts` | 课程详情、资料上传、资料删除和独立问答的真实请求。 |
+| `types.ts` | 定义课程配置、文档、来源、任务、章节、计划、题目、轮次结果及问答类型。 |
+| `demo.ts` | 创建固定样例课程、生成固定题目、演示排期和两轮状态流转。 |
+| `course.css` | 课程标签、章节任务、课程信息、资料列表和问答样式。 |
+
+### 三个课程标签
+
+| 页面标签 | 内容 |
+| --- | --- |
+| `Plan` | 课程学习规划。 |
+| `Course information` | 课程配置、备注和资料。 |
+| `Q&A` | 独立问答。 |
+
+资料管理属于具体课程，不单独建立一个跨课程的全局资料页面。
+
+### 演示函数说明
+
+| 函数 | 功能 |
+| --- | --- |
+| `createDemo()` | 建立固定样例课程、章节、资料和任务。 |
+| `scheduleDemo()` | 按样例可用时间重新排期，保留已完成任务。 |
+| `demoQuestions()` | 返回固定演示题目。 |
+| `startDemoSession()` | 建立某章节的第一轮演示练习。 |
+| `submitDemo()` | 执行固定演示判分和状态转换。 |
+| `nextDemoRound()` | 在完成复习后进入第二轮，阻止第三轮。 |
+
+这些函数不承担真实模型出题、讲义分析或正式判分。
+
+## 十七、章节练习文件说明
+
+目录：
+
+```text
+src/pages/practice/
+```
+
+| 文件 | 功能 |
+| --- | --- |
+| `PracticePage.tsx` | 章节练习总入口、课程筛选、章节状态及报告入口。 |
+| `PracticeSessionPage.tsx` | 开始或继续练习，收集答案、检查是否答完并提交。 |
+| `QuestionCard.tsx` | 渲染选择题选项和简答题输入框。 |
+| `PracticeResult.tsx` | 展示本轮成绩、每题结果、错题解释、引用及复习和第二轮入口。 |
+| `ChapterReportPage.tsx` | 展示两轮成绩、最终通过状态、概念及后续规划入口。 |
+| `practice.css` | 章节卡片、题目、选项、成绩和报告样式。 |
+
+### 当前演示规则
+
+- 单次章节练习最多两轮。
+- 题目等权计分。
+- 样例章节通过线为 80%。
+- 样例简答题使用关键词命中检查，达到 80% 记为该题正确。
+- 第一轮未通过后，需要先完成复习。
+- 第二轮结束后停止，不生成第三轮。
+- 只给错题展示补救解释。
+- 两轮分数分别保留，不取平均值作为最终结果。
+- 保留两轮各自的提交答案。
+- 重复提交已结束轮次不会再次产生结果。
+
+真实题组、判分、保存恢复和最终状态需要使用 B 原有模块返回的数据。
+
+## 十八、页面路由
+
+| 路径 | 页面或行为 |
+| --- | --- |
+| `/` | 已登录进入课程列表，未登录进入登录页。 |
+| `/login` | 登录；已登录时返回课程列表。 |
+| `/register` | 注册；已登录时返回课程列表。 |
+| `/courses` | 我的课程。 |
+| `/courses/new` | 创建课程。 |
+| `/courses/:courseId/edit` | 查看真实课程设置或编辑演示课程。 |
+| `/courses/:courseId` | 跳转到课程规划。 |
+| `/courses/:courseId/plan` | 课程规划。 |
+| `/courses/:courseId/info` | 课程信息和资料。 |
+| `/courses/:courseId/qa` | 独立问答。 |
+| `/courses/:courseId/ask` | 兼容旧链接，跳转到问答标签。 |
+| `/calendar` | 学习日历。 |
+| `/practice` | 章节练习列表。 |
+| `/practice/:courseId/:chapterId` | 章节练习。 |
+| `/practice/:courseId/:chapterId/report` | 章节报告。 |
+
+常用演示地址：
+
+```text
+/courses/demo/plan
+/calendar?course=demo
+/practice?course=demo
+/practice/demo/trees
+/practice/demo/trees/report
+```
+
+`demo` 是前端保留的演示标识，不会作为真实课程编号发给后端。
+
+部署时，服务器需要将前端业务路由回退到 `index.html`，并把 `/api` 请求单独交给后端。
+
+## 十九、数据保存和页面联动
+
+### 真实课程
+
+通过后端保存：
+
+- 用户与会话。
+- 课程配置字符串。
+- 文档与解析页面。
+- 问答记录。
+
+前端通过共享状态和刷新函数同步课程列表、侧栏及详情。
+
+### 演示数据
+
+本地存储键：
+
+```text
+citepath-interface-demo-v1-{userId}
+```
+
+保存内容包括：
+
+- 样例课程设置。
+- 计划和任务状态。
+- 演示答案。
+- 两轮成绩和报告所需数据。
+
+同一浏览器、同一用户可以恢复演示。
+
+本地保存不等于跨设备或服务器恢复。课程页的演示重置会清空这份样例流程，但不修改真实课程。
+
+### 问答视图
+
+当前对话内容保存在页面组件状态中。离开该视图或刷新后不自动恢复，原因是尚无历史读取接口。
+
+## 二十、界面语言与样式维护
+
+系统固定界面文案统一使用英文。
+
+文档使用中文，代码标识、接口字段和页面路由保留原有英文。
+
+用户填写的课程名、备注、文件名和讲义内容保持原文。
+
+样式分工：
+
+| 文件 | 范围 |
+| --- | --- |
+| `src/global.css` | 公共基础、颜色及通用业务组件。 |
+| `src/layout/layout.css` | 左侧导航和主内容布局。 |
+| `src/shared/auth/auth.css` | 登录注册专用外观。 |
+| 各页面目录的 CSS | 页面自己的布局和组件外观。 |
+
+新增页面应放在对应的 `pages` 子目录，不再把业务页面直接堆到 `src` 根目录。
+
+不要重新引入旧 `App.css`、`index.css`，以免旧颜色和全局选择器干扰新页面。
+
+## 二十一、自动生成目录
+
+| 目录 | 功能 |
+| --- | --- |
+| `node_modules/` | npm 安装的依赖，不手动修改，不提交。 |
+| `dist/` | 生产构建结果，不作为源码手动维护。 |
+| `node_modules/.tmp/` | 当前 TypeScript 配置使用的增量检查缓存。 |
+| Vite 在依赖目录内生成的缓存 | 加快开发或配置处理，不属于业务源码。 |
+
+删除生成目录不等于修改业务逻辑，但之后可能需要重新安装依赖或重新构建。
+
+## 二十二、人工检查清单
+
+### 认证
+
+- 未登录访问业务地址进入登录页。
+- 注册成功后进入课程列表。
+- 已登录访问登录或注册页返回课程列表。
+- 登录错误显示英文提示。
+- 退出后无法继续访问业务页面。
+
+### 真实课程和资料
+
+- 创建课程后能够重新读取设置。
+- 上传 PDF 后显示文档编号和页数。
+- 部分上传失败时不重复创建课程。
+- 删除资料后列表刷新。
+- 没有规划数据时不显示虚构进度。
+
+### 独立问答
+
+- 无可用资料时不允许提交。
+- 回答显示来源。
+- 无依据时明确说明。
+- 问答不修改练习成绩。
+
+### 演示
+
+- 月历日期和右侧概览联动。
+- 日历与课程计划的任务状态一致。
+- 修改设置后重新排期。
+- 刷新后恢复未提交答案。
+- 第一轮失败后先复习再进入第二轮。
+- 第二轮结束后没有第三轮入口。
+- 报告保留两轮各自的成绩和状态。
+
+## 二十三、后续对接原则
+
+- C 负责的真实规划接入共享计划数据。
+- B 原有模块继续负责正式练习、判分、恢复和报告。
+- D 原有的入库、检索、问答及集成职责保持不变。
+- 真实业务结果以服务端为准。
+- 不能把固定演示评分用于正式课程。
+- 接口尚未约定时，不编造请求地址。
+- 每次新增后端能力后，同步更新实现状态和本 README。
+
+详细接口和接入位置见同目录：
+
+```text
+BACKEND_INTEGRATION.zh-CN.md
+```

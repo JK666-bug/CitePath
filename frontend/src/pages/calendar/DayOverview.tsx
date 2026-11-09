@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import type { Task } from '../course/types'
+import type { Material, Task } from '../course/types'
 
 import {
   duration,
@@ -13,12 +13,14 @@ export default function DayOverview({
   date,
   tasks,
   courseName,
+  materials,
   onClose,
   onComplete,
 }: {
   date: string
   tasks: Task[]
   courseName: string
+  materials: readonly Material[]
   onClose: () => void
   onComplete: (id: string) => void
 }) {
@@ -97,6 +99,7 @@ export default function DayOverview({
             </p>
 
             <Sources
+              materials={materials}
               sources={task.sources}
             />
 

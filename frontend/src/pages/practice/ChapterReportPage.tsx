@@ -159,6 +159,7 @@ export default function ChapterReportPage({
         </p>
 
         <Sources
+          materials={demo.course.documents}
           sources={chapter.sources}
         />
 

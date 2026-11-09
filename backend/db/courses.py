@@ -51,6 +51,55 @@ def create_course(user_id: int, name: str, student_brief: str) -> dict:
         connection.close()
     return get_course(user_id, course_id)
 
+def update_course(
+    user_id: int,
+    course_id: int,
+    name: str,
+    student_brief: str,
+) -> dict | None:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT student_brief
+                FROM courses
+                WHERE id = %s AND user_id = %s
+                FOR UPDATE
+                """,
+                (course_id, user_id),
+            )
+            current = cursor.fetchone()
+            if current is None:
+                return None
+
+            cursor.execute(
+                """
+                UPDATE courses
+                SET name = %s, student_brief = %s
+                WHERE id = %s AND user_id = %s
+                """,
+                (name, student_brief, course_id, user_id),
+            )
+
+            if current["student_brief"] != student_brief:
+                cursor.execute(
+                    """
+                    UPDATE study_plans
+                    SET student_brief = %s, status = 'draft'
+                    WHERE course_id = %s
+                    """,
+                    (student_brief, course_id),
+                )
+
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+    return get_course(user_id, course_id)
 
 def get_course(user_id: int, course_id: int) -> dict | None:
     connection = connect()

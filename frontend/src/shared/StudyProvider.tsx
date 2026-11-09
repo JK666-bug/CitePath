@@ -5,7 +5,16 @@ import {
   useEffect,
   useState,
 } from 'react'
+import {
+  loadBrowserStudyAvailability,
+  type StudyAvailability,
+} from '../pages/settings/availability'
 
+import {
+  getStudyAvailability,
+  putStudyAvailability,
+  type AvailabilityResponse,
+} from '../pages/settings/api'
 import type { ReactNode } from 'react'
 
 import { getCourses } from '../pages/courses/api'
@@ -59,6 +68,43 @@ function loadDemo(key: string): DemoState {
 function useStudyValue(userId: number) {
   const key =
     `citepath-interface-demo-v1-${userId}`
+  const [availability, setAvailability] =
+    useState<AvailabilityResponse | null>(null)
+  const [availabilityError, setAvailabilityError] = useState('')
+  const [availabilityAttempt, setAvailabilityAttempt] = useState(0)
+
+  // Keep old browser settings available as a draft for the first account save.
+  const [browserStudyAvailability] = useState(
+    () => loadBrowserStudyAvailability(userId),
+  )
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    void getStudyAvailability(controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted) {
+          setAvailability(result)
+        }
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setAvailabilityError(messageOf(error))
+        }
+      })
+
+    return () => controller.abort()
+  }, [availabilityAttempt])
+
+  const updateStudyAvailability = useCallback(async (value: StudyAvailability) => {
+    const result = await putStudyAvailability(value)
+    setAvailability(result)
+  }, [])
+
+  function retryStudyAvailability() {
+    setAvailabilityError('')
+    setAvailabilityAttempt((current) => current + 1)
+  }
 
   const [courses, setCourses] =
     useState<CourseSummary[]>([])
@@ -139,7 +185,6 @@ function useStudyValue(userId: number) {
       },
       plan: scheduleDemo(
         current.plan,
-        config,
         'Sample course settings changed; completed tasks were preserved.',
       ),
     }))
@@ -193,6 +238,12 @@ function useStudyValue(userId: number) {
   }
 
   return {
+    studyAvailability: availability?.weekday_minutes ?? null,
+    studyAvailabilitySaved: availability?.saved ?? false,
+    browserStudyAvailability,
+    availabilityError,
+    retryStudyAvailability,
+    updateStudyAvailability,
     courses,
     coursesLoading,
     coursesError,

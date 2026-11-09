@@ -8,6 +8,7 @@ import {
   LogOut,
   PencilLine,
   Plus,
+  Settings,
 } from 'lucide-react'
 
 import { useStudy } from '../shared/StudyProvider'
@@ -73,6 +74,12 @@ export default function Sidebar({
       icon: PencilLine,
       active:
         path.startsWith('/practice'),
+    },
+    {
+      href: '/settings',
+      title: 'Settings',
+      icon: Settings,
+      active: path === '/settings',
     },
   ]
 

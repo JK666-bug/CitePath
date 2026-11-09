@@ -1,53 +1,50 @@
+import { dateKey, parseDate } from '../../shared/format.ts'
 import type { CourseConfig } from '../course/types'
 
-export function encodeBrief(
-  config: CourseConfig,
-) {
+export function encodeBrief(config: CourseConfig): string {
   return JSON.stringify({
-    schema: 'citepath-course-v1',
-    ...config,
+    deadline: config.deadline,
+    earlyDays: config.earlyDays,
+    note: config.note,
   })
 }
 
-export function decodeBrief(
-  text: string,
-): CourseConfig {
+export function decodeBrief(text: string): CourseConfig {
+  const legacy = { deadline: '', earlyDays: 0, note: text }
+
   try {
-    const value: unknown = JSON.parse(text)
+    const item: unknown = JSON.parse(text)
 
+    // 通过课程日期字段识别设置，也能读取已经保存过的课程。
     if (
-      value &&
-      typeof value === 'object' &&
-      'schema' in value &&
-      value.schema === 'citepath-course-v1'
+      item === null ||
+      typeof item !== 'object' ||
+      (!('deadline' in item) && !('earlyDays' in item))
     ) {
-      const item = value as Record<string, unknown>
+      return legacy
+    }
 
-      if (
-        typeof item.deadline === 'string' &&
-        /^\d{4}-\d{2}-\d{2}$/.test(item.deadline) &&
-        typeof item.weeklyHours === 'number' &&
-        item.weeklyHours > 0 &&
-        typeof item.earlyDays === 'number' &&
-        item.earlyDays >= 0 &&
-        typeof item.note === 'string'
-      ) {
-        return {
-          deadline: item.deadline,
-          weeklyHours: item.weeklyHours,
-          earlyDays: item.earlyDays,
-          note: item.note,
-        }
-      }
+    const config = item as Record<string, unknown>
+    const rawDate = config.deadline
+    const deadline =
+      typeof rawDate === 'string' &&
+      /^\d{4}-\d{2}-\d{2}$/.test(rawDate) &&
+      dateKey(parseDate(rawDate)) === rawDate
+        ? rawDate
+        : ''
+
+    return {
+      deadline,
+      earlyDays:
+        typeof config.earlyDays === 'number' &&
+        Number.isInteger(config.earlyDays) &&
+        config.earlyDays >= 0
+          ? config.earlyDays
+          : 0,
+      note: typeof config.note === 'string' ? config.note : '',
     }
   } catch {
-    // Legacy courses contain a plain study note.
-  }
-
-  return {
-    deadline: '',
-    weeklyHours: 0,
-    earlyDays: 0,
-    note: text,
+    // 最早保存的课程可能只包含一段纯文本备注。
+    return legacy
   }
 }

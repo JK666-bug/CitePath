@@ -7,6 +7,8 @@ import {
   prettyDate,
 } from '../format'
 
+import { DEMO_WEEKLY_MINUTES } from '../../pages/course/demo'
+
 import type {
   CourseConfig,
   StudyPlan,
@@ -109,13 +111,7 @@ export default function PaceLine({
 
   const forecast = addDays(
     dateKey(),
-    Math.ceil(
-      remaining /
-        Math.max(
-          1,
-          (config.weeklyHours * 60) / 7,
-        ),
-    ),
+    Math.ceil(remaining / (DEMO_WEEKLY_MINUTES / 7)),
   )
 
   const span = Math.max(
@@ -222,10 +218,8 @@ export default function PaceLine({
 
       {!compact && (
         <p className="muted small">
-          Projection uses your planned
-          availability of {config.weeklyHours}
-          {' '}hours per week. It is a schedule
-          estimate, not a mastery score.
+          Sample outlook uses a fixed demo budget of
+          {' '}{duration(DEMO_WEEKLY_MINUTES)} per week.
         </p>
       )}
     </section>

@@ -1,4 +1,4 @@
-import type { Task } from './types'
+import type { Material, Task } from './types'
 
 import {
   duration,
@@ -14,10 +14,12 @@ import {
 
 export default function TaskDetails({
   task,
+  materials,
   onClose,
   onComplete,
 }: {
   task: Task | null
+  materials: readonly Material[]
   onClose: () => void
   onComplete: (id: string) => void
 }) {
@@ -57,6 +59,7 @@ export default function TaskDetails({
             </strong>
 
             <Sources
+              materials={materials}
               sources={task.sources}
             />
           </div>

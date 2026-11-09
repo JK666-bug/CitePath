@@ -16,6 +16,8 @@ import {
 import {
   addDays,
   dateKey,
+  daysBetween,
+  parseDate,
 } from '../../shared/format'
 
 import {
@@ -31,7 +33,7 @@ import {
   uploadMaterial,
 } from '../course/api'
 
-import { createCourse } from './api'
+import { createCourse, updateCourse } from './api'
 
 import {
   decodeBrief,
@@ -56,8 +58,7 @@ function Editor({
   courseId?: string
 }) {
   const isDemo = courseId === 'demo'
-  const realEdit =
-    Boolean(course && !isDemo)
+  const existingCourse = isDemo ? undefined : course
 
   const {
     editDemo,
@@ -77,7 +78,6 @@ function Editor({
               dateKey(),
               30,
             ),
-            weeklyHours: 6,
             earlyDays: 2,
             note: '',
           }),
@@ -108,217 +108,147 @@ function Editor({
   const [retryChecked, setRetryChecked] =
     useState(false)
 
-  async function save(
-    event: FormEvent<HTMLFormElement>,
-  ) {
+  const brief = encodeBrief(value)
+  const settingsChanged =
+    !existingCourse ||
+    value.name.trim() !== existingCourse.name ||
+    brief !== encodeBrief(decodeBrief(existingCourse.student_brief))
+  const shouldSaveSettings = createdId === null && settingsChanged
+  const nothingToSave = !shouldSaveSettings && files.length === 0
+  const retryBlocked = Boolean(createdId && error && !retryChecked)
+
+  async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (
-      busy ||
-      realEdit ||
-      uncertainCreate
-    ) {
-      return
-    }
+    if (busy || uncertainCreate || retryBlocked || nothingToSave) return
 
     const next: Record<string, string> = {}
 
-    if (!value.name.trim()) {
-      next.name =
-        'Please enter a course name.'
+    // A materials-only upload also works for older courses with past deadlines.
+    if (shouldSaveSettings) {
+      const today = dateKey()
+      if (!value.name.trim()) {
+        next.name = 'Please enter a course name.'
+      }
+
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(value.deadline) ||
+        dateKey(parseDate(value.deadline)) !== value.deadline ||
+        value.deadline < today
+      ) {
+        next.deadline = 'Choose today or a future date.'
+      }
+
+      if (
+        !Number.isInteger(value.earlyDays) ||
+        value.earlyDays < 0 ||
+        (!next.deadline && value.earlyDays > daysBetween(today, value.deadline))
+      ) {
+        next.earlyDays =
+          'Choose a whole number that keeps your target date on or after today.'
+      }
+
+      if (Array.from(brief).length > 10000) {
+        next.note =
+          'Your course settings and note are too long. Please shorten your note.'
+      }
     }
 
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(
-        value.deadline,
-      ) ||
-      value.deadline < dateKey()
-    ) {
-      next.deadline =
-        'Choose today or a future date.'
-    }
-
-    if (
-      !Number.isFinite(
-        value.weeklyHours,
-      ) ||
-      value.weeklyHours < 0.5 ||
-      value.weeklyHours > 168
-    ) {
-      next.weeklyHours =
-        'Enter a weekly study time between 0.5 and 168 hours.'
-    }
-
-    if (
-      !Number.isInteger(
-        value.earlyDays,
-      ) ||
-      value.earlyDays < 0 ||
-      (
-        value.deadline &&
-        addDays(
-          value.deadline,
-          -value.earlyDays,
-        ) < dateKey()
-      )
-    ) {
-      next.earlyDays =
-        'Choose a whole number that keeps your target date on or after today.'
-    }
-
-    if (
-      files.some(
-        (file) =>
-          !file.name
-            .toLowerCase()
-            .endsWith('.pdf'),
-      )
-    ) {
-      next.files =
-        'Please choose PDF files only.'
-    }
-
-    if (
-      files.some(
-        (file) => file.size === 0,
-      )
-    ) {
-      next.files =
-        'Empty files cannot be uploaded.'
-    }
-
-    const brief = encodeBrief({
-      deadline: value.deadline,
-      weeklyHours: value.weeklyHours,
-      earlyDays: value.earlyDays,
-      note: value.note,
-    })
-
-    if (
-      Array.from(brief).length > 10000
-    ) {
-      next.note =
-        'Your course settings and note are too long. Please shorten your note.'
+    if (files.some((file) => !file.name.toLowerCase().endsWith('.pdf'))) {
+      next.files = 'Please choose PDF files only.'
+    } else if (files.some((file) => file.size === 0)) {
+      next.files = 'Empty files cannot be uploaded.'
     }
 
     setErrors(next)
-
-    if (Object.keys(next).length) {
-      document
-        .getElementById(
-          `course-${Object.keys(next)[0]}`,
-        )
-        ?.focus()
-
+    const firstError = Object.keys(next)[0]
+    if (firstError) {
+      document.getElementById(`course-${firstError}`)?.focus()
       return
     }
 
     setBusy(true)
     setOpen(true)
     setError('')
-    setStatus('Saving course settings…')
+    setStatus(shouldSaveSettings ? 'Saving course settings…' : 'Uploading course materials…')
 
-    let id = createdId
+    let id = existingCourse?.id ?? createdId
+    let settingsSaved = false
+    let added = 0
+    const duplicates: string[] = []
 
     try {
       if (isDemo) {
-        editDemo(
-          value.name.trim(),
-          value,
-        )
-
-        setStatus(
-          'Sample study time and dates have been recalculated.',
-        )
-      } else {
-        if (!id) {
-          const result =
-            await createCourse(
-              value.name.trim(),
-              brief,
-            )
-
-          id = result.id
-          setCreatedId(id)
-        }
-
-        const duplicates: string[] = []
-
-        for (const file of files) {
-          if (
-            uploaded.includes(
-              fileKey(file),
-            )
-          ) {
-            continue
-          }
-
-          setStatus(
-            `Uploading and processing ${file.name}…`,
-          )
-
-          const result =
-            await uploadMaterial(id, file)
-
-          if (result.duplicate) {
-            duplicates.push(
-              duplicateMessage(
-                file.name,
-                result.filename,
-              ),
-            )
-          }
-
-          setUploaded((current) => [
-            ...current,
-            fileKey(file),
-          ])
-        }
-
-        await loadCourse(id)
-        await refreshCourses()
-
-        setStatus(
-          duplicates.length
-            ? `Course settings saved. ${duplicates.join(' ')} Automatic analysis is awaiting the planning service.`
-            : 'Course settings and selected PDF materials have been saved. Automatic analysis is awaiting the planning service.',
-        )
+        editDemo(value.name.trim(), value)
+        setStatus('Sample study time and dates have been recalculated.')
+        return
       }
+
+      if (id === null) {
+        const created = await createCourse(value.name.trim(), brief)
+        id = created.id
+        setCreatedId(id)
+        settingsSaved = true
+      } else if (existingCourse && shouldSaveSettings) {
+        await updateCourse(id, value.name.trim(), brief)
+        settingsSaved = true
+      }
+
+      for (const file of files) {
+        setStatus(`Uploading and processing ${file.name}…`)
+        const result = await uploadMaterial(id, file)
+        if (result.duplicate) {
+          duplicates.push(duplicateMessage(file.name, result.filename))
+        } else {
+          added += 1
+        }
+
+        // Keep only unfinished uploads in the picker if a later request fails.
+        const key = fileKey(file)
+        setFiles((current) => current.filter((item) => fileKey(item) !== key))
+        if (!existingCourse) {
+          setUploaded((current) => [...current, key])
+        }
+      }
+
+      const messages = [...duplicates]
+      if (added > 0) {
+        messages.unshift(`${added} PDF ${added === 1 ? 'file' : 'files'} uploaded.`)
+      }
+      if (settingsSaved) messages.unshift('Course settings saved.')
+      setStatus(messages.join(' '))
     } catch (reason) {
       if (
-        !id &&
+        id === null &&
         reason instanceof ApiError &&
-        (
-          reason.status === 0 ||
-          reason.status >= 500
-        )
+        (reason.status === 0 || reason.status >= 500)
       ) {
         setUncertainCreate(true)
       }
 
       setRetryChecked(false)
-
-      setError(
-        `${messageOf(reason)} A request may have reached the server. Check My courses and saved materials before retrying.`,
-      )
-
-      setStatus(
-        id
-          ? 'The course already exists. Do not create it again.'
-          : 'Please verify whether a course was created before starting another request.',
-      )
-
-      await refreshCourses()
+      setError(`${messageOf(reason)} Check the saved course and materials before retrying.`)
+      const saved = []
+      if (settingsSaved) saved.push('Course settings were saved.')
+      if (added > 0) {
+        saved.push(`${added} PDF ${added === 1 ? 'file was' : 'files were'} uploaded.`)
+      }
+      setStatus(saved.join(' ') || 'Some changes could not be confirmed.')
     } finally {
+      if (!isDemo) {
+        const [details] = await Promise.allSettled([
+          id === null ? Promise.resolve() : loadCourse(id),
+          refreshCourses(),
+        ])
+        if (details.status === 'rejected') {
+          setStatus((current) =>
+            `${current} Reopen the course to refresh its details.`,
+          )
+        }
+      }
       setBusy(false)
     }
   }
-
-  const retryBlocked = Boolean(
-    createdId &&
-    error &&
-    !retryChecked,
-  )
 
   return (
     <div className="course-editor-page">
@@ -350,16 +280,6 @@ function Editor({
 
       {isDemo && <DemoNotice />}
 
-      {realEdit && (
-        <Notice>
-          The current backend supports reading
-          course settings but has no update
-          endpoint. These settings are
-          read-only here. You can manage PDF
-          materials in Course information.
-        </Notice>
-      )}
-
       <form
         className="panel editor-form stack"
         noValidate
@@ -372,11 +292,7 @@ function Editor({
             setErrors({})
           }}
           errors={errors}
-          disabled={
-            busy ||
-            realEdit ||
-            createdId !== null
-          }
+          disabled={busy || createdId !== null}
         />
 
         <section>
@@ -404,13 +320,11 @@ function Editor({
               through a real course.
             </p>
           ) : (
-            !realEdit && (
-              <MaterialPicker
-                files={files}
-                onChange={setFiles}
-                disabled={busy}
-              />
-            )
+            <MaterialPicker
+              files={files}
+              onChange={setFiles}
+              disabled={busy}
+            />
           )}
 
           {errors.files && (
@@ -479,9 +393,9 @@ function Editor({
             type="submit"
             disabled={
               busy ||
-              realEdit ||
               uncertainCreate ||
-              retryBlocked
+              retryBlocked ||
+              nothingToSave
             }
           >
             {busy
@@ -489,16 +403,18 @@ function Editor({
               : isDemo
                 ? 'Save and update sample plan'
                 : createdId
-                  ? 'Retry remaining uploads'
-                  : 'Save course'}
+                  ? 'Upload remaining materials'
+                  : existingCourse
+                    ? settingsChanged
+                      ? 'Save changes'
+                      : 'Upload materials'
+                    : 'Save course'}
           </button>
 
           <span className="muted small">
-            {realEdit
-              ? 'Saving requires a course update endpoint.'
-              : isDemo
-                ? 'Saved locally in this browser.'
-                : 'Saved to your account.'}
+            {isDemo
+              ? 'Saved locally in this browser.'
+              : 'Saved to your account.'}
           </span>
         </div>
       </form>

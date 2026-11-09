@@ -190,7 +190,60 @@
 }
 
 .qa-page {
-  max-width: 900px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+
+.qa-main {
+  min-width: 0;
+}
+
+.qa-history {
+  position: sticky;
+  top: 20px;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+}
+
+.qa-history h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.qa-history-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.qa-history-item {
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.qa-history-item:hover:not(:disabled) {
+  background: var(--soft);
+  border-color: var(--primary);
+}
+
+.qa-history-item span {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
 .qa-answer > .badge {
@@ -212,6 +265,15 @@
 }
 
 @media (max-width: 1050px) {
+  .qa-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qa-history {
+    position: static;
+    max-height: 320px;
+  }
+
   .course-plan-overview {
     grid-template-columns: 1fr;
   }

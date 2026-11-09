@@ -1,5 +1,5 @@
 import type { CourseConfig } from '../course/types'
-
+import { Link } from '../../shared/router'
 export type CourseFormValue =
   CourseConfig & {
     name: string
@@ -88,39 +88,6 @@ export default function CourseForm({
         {error('deadline')}
       </label>
 
-      <label className="field">
-        <span>
-          Weekly study time (hours)
-        </span>
-
-        <input
-          id="course-weeklyHours"
-          type="number"
-          min="0.5"
-          max="168"
-          step="0.5"
-          value={value.weeklyHours || ''}
-          disabled={disabled}
-          aria-invalid={
-            Boolean(errors.weeklyHours)
-          }
-          aria-describedby={
-            errors.weeklyHours
-              ? 'course-weeklyHours-error'
-              : undefined
-          }
-          onChange={(event) =>
-            onChange({
-              ...value,
-              weeklyHours: Number(
-                event.target.value,
-              ),
-            })
-          }
-        />
-
-        {error('weeklyHours')}
-      </label>
 
       <label className="field">
         <span>
@@ -155,14 +122,11 @@ export default function CourseForm({
         {error('earlyDays')}
       </label>
 
-      <div className="editor-help">
-        <strong>
-          Leave room for review.
-        </strong>
-
+      <div className="editor-help full">
+        <strong>Time for review</strong>
         <p>
-          Your deadline and available time help
-          shape a realistic schedule.
+          All courses share the time you set in{' '}
+          <Link href="/settings">Study&nbsp;availability</Link>.
         </p>
       </div>
 

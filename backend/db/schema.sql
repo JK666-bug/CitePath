@@ -69,3 +69,12 @@ CREATE TABLE IF NOT EXISTS qa_records (
   CONSTRAINT fk_qa_course FOREIGN KEY (course_id) REFERENCES courses (id),
   CONSTRAINT fk_qa_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS study_availability (
+  user_id INT PRIMARY KEY,
+  weekday_minutes JSON NOT NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_study_availability_user
+    FOREIGN KEY (user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

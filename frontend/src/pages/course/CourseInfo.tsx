@@ -8,6 +8,7 @@ import type {
 } from './types'
 
 import { decodeBrief } from '../courseEditor/brief'
+import { numberMaterials } from './materials'
 
 import MaterialPicker, {
   fileKey,
@@ -20,7 +21,6 @@ import {
 } from './api'
 
 import { useStudy } from '../../shared/StudyProvider'
-import { Link } from '../../shared/router'
 import { messageOf } from '../../shared/request'
 import { prettyDate } from '../../shared/format'
 
@@ -45,6 +45,7 @@ export default function CourseInfo({
     decodeBrief(course.student_brief)
 
   const demo = courseId === 'demo'
+  const materials = numberMaterials(course.documents)
 
   const [files, setFiles] =
     useState<File[]>([])
@@ -182,20 +183,7 @@ export default function CourseInfo({
   return (
     <div className="stack">
       <section className="panel">
-        <div className="actions spread">
-          <h2>Course settings</h2>
-
-          <Link
-            className="button small secondary"
-            href={
-              `/courses/${courseId}/edit`
-            }
-          >
-            {demo
-              ? 'Edit settings'
-              : 'View settings'}
-          </Link>
-        </div>
+        <h2>Course settings</h2>
 
         <dl className="course-facts">
           <div>
@@ -205,15 +193,6 @@ export default function CourseInfo({
                 config.deadline,
                 true,
               )}
-            </dd>
-          </div>
-
-          <div>
-            <dt>Weekly study time</dt>
-            <dd>
-              {config.weeklyHours
-                ? `${config.weeklyHours} hours`
-                : 'Not set'}
             </dd>
           </div>
 
@@ -256,9 +235,9 @@ export default function CourseInfo({
       <section className="panel">
         <h2>Course materials</h2>
 
-        {course.documents.length ? (
+        {materials.length ? (
           <ul className="materials-list">
-            {course.documents.map(
+            {materials.map(
               (material) => (
                 <li key={material.id}>
                   <FileText
@@ -272,7 +251,7 @@ export default function CourseInfo({
                     </strong>
 
                     <p>
-                      Doc {material.id}
+                      Doc {material.displayNumber}
                       {' · '}
                       {material.page_count}
                       {' '}pages

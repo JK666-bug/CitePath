@@ -5,7 +5,7 @@ import {
 
 import LoginPage from './unLogin/login/LoginPage'
 import RegisterPage from './unLogin/register/RegisterPage'
-
+import SettingsPage from './pages/settings/SettingsPage'
 import { getCurrentUser } from './shared/session'
 import type { User } from './shared/session'
 
@@ -71,7 +71,9 @@ function ProtectedPages() {
       <CourseEditorPage key="new" />
     )
   }
-
+  if (path === '/settings') {
+    return <SettingsPage />
+  }
   if (path === '/calendar') {
     return <CalendarPage />
   }

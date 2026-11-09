@@ -91,11 +91,10 @@ export default function CoursePlan({
             </div>
 
             <div>
-              <small>
-                Weekly availability
-              </small>
+              <small>Tasks completed</small>
               <strong>
-                {config.weeklyHours}h
+                {plan.tasks.filter((task) => task.status === 'Completed').length}
+                {' / '}{plan.tasks.length}
               </strong>
             </div>
           </div>
@@ -146,6 +145,7 @@ export default function CoursePlan({
               </div>
 
               <Sources
+                materials={course.documents}
                 sources={chapter.sources}
               />
             </header>
@@ -258,6 +258,7 @@ export default function CoursePlan({
 
       <TaskDetails
         task={selected}
+        materials={course.documents}
         onClose={() =>
           navigate('/courses/demo/plan')
         }

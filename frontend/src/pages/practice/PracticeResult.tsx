@@ -186,6 +186,7 @@ export default function PracticeResult({
                     )}
 
                     <Sources
+                      materials={demo.course.documents}
                       sources={
                         question.sources
                       }
@@ -212,6 +213,7 @@ export default function PracticeResult({
           </p>
 
           <Sources
+            materials={demo.course.documents}
             sources={chapter.sources}
           />
 

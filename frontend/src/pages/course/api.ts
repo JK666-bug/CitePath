@@ -1,6 +1,7 @@
 import { request } from '../../shared/request'
 import type {
   CourseDetail,
+  QAHistoryResponse,
   QAResponse,
 } from './types'
 
@@ -75,5 +76,22 @@ export function askCourse(
       },
       body: JSON.stringify({ question }),
     },
+  )
+}
+
+export function getQuestionHistory(
+  courseId: number,
+  options: {
+    beforeId?: number
+    signal?: AbortSignal
+  } = {},
+) {
+  const query = options.beforeId === undefined
+    ? ''
+    : `?before_id=${options.beforeId}`
+
+  return request<QAHistoryResponse>(
+    `/api/courses/${courseId}/questions${query}`,
+    { signal: options.signal },
   )
 }

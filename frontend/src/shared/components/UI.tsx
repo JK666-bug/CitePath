@@ -13,7 +13,8 @@ import {
   X,
 } from 'lucide-react'
 
-import type { Source } from '../../pages/course/types'
+import type { Material, Source } from '../../pages/course/types'
+import { numberMaterials } from '../../pages/course/materials'
 import { Link } from '../router'
 
 export function PageHeader({
@@ -197,11 +198,28 @@ export function Modal({
 
 export function Sources({
   sources,
+  materials,
 }: {
   sources: Source[]
+  materials: readonly Material[]
 }) {
   const [selected, setSelected] =
     useState<Source | null>(null)
+
+  // 编号来自课程的完整资料列表，与当前回答引用了几份资料无关。
+  const documentNumbers = new Map(
+    numberMaterials(materials).map((material) => [
+      material.id,
+      material.displayNumber,
+    ]),
+  )
+
+  function sourceLabel(source: Source): string {
+    const number = documentNumbers.get(source.document_id)
+    return number === undefined
+      ? `${source.filename} (unavailable)`
+      : `Doc ${number}`
+  }
 
   return (
     <>
@@ -210,6 +228,7 @@ export function Sources({
           <button
             type="button"
             className="source-chip"
+            title={source.filename}
             key={
               `${source.document_id}-` +
               source.page_number
@@ -219,7 +238,7 @@ export function Sources({
             }
           >
             <FileText size={12} />
-            Doc {source.document_id}
+            {sourceLabel(source)}
             {' · '}
             p. {source.page_number}
           </button>
@@ -238,7 +257,7 @@ export function Sources({
             </strong>
 
             <p>
-              Document {selected.document_id}
+              {sourceLabel(selected)}
               {' · '}
               PDF page {selected.page_number}
             </p>

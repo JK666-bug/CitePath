@@ -1,7 +1,6 @@
 //集中定义课程、任务和练习的数据格式。
 export type CourseConfig = {
   deadline: string
-  weeklyHours: number
   earlyDays: number
   note: string
 }
@@ -109,4 +108,13 @@ export type QAResponse = {
   answer: string
   cited_pages: Source[]
   refused: boolean
+}
+
+export type QARecord = QAResponse & {
+  question: string
+}
+
+export type QAHistoryResponse = {
+  records: QARecord[]
+  next_before_id: number | null
 }

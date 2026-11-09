@@ -18,6 +18,7 @@ import {
 
 import {
   dateKey,
+  duration,
   parseDate,
 } from '../../shared/format'
 
@@ -33,6 +34,7 @@ import PaceLine, {
 } from '../../shared/components/PaceLine'
 
 import { decodeBrief } from '../courseEditor/brief'
+import { minutesOnDate } from '../settings/availability'
 
 import MonthGrid from './MonthGrid'
 import DayOverview from './DayOverview'
@@ -59,6 +61,8 @@ export default function CalendarPage() {
     demo,
     courses,
     completeTask,
+    studyAvailability,
+    availabilityError,
   } = useStudy()
 
   const { search } = useLocation()
@@ -88,13 +92,21 @@ export default function CalendarPage() {
     ? demo.plan.tasks
     : []
 
+  const today = dateKey()
   const todayTasks = tasks.filter(
     (task) =>
-      task.date === dateKey(),
+      task.date === today,
   )
 
   const todayTotals =
     taskTotals(todayTasks)
+  const todayAvailable = studyAvailability === null
+    ? null
+    : minutesOnDate(studyAvailability, parseDate(today))
+
+  const todayAvailabilityLabel = todayAvailable === null
+    ? (availabilityError ? 'Unavailable' : 'Loading…')
+    : (todayAvailable === 0 ? 'Rest day' : duration(todayAvailable))
 
   function update(values: {
     date?: string
@@ -150,6 +162,11 @@ export default function CalendarPage() {
             done={todayTotals.done}
             total={todayTotals.total}
           />
+
+          <p className="muted small">
+            Study availability today: {todayAvailabilityLabel}
+            {' · '}<Link href="/settings">Edit</Link>
+          </p>
 
           {demoMode ? (
             <small className="muted">
@@ -319,6 +336,7 @@ export default function CalendarPage() {
                 task.date === selected,
             )}
             courseName={demo.course.name}
+            materials={demo.course.documents}
             onClose={() =>
               update({ date: '' })
             }

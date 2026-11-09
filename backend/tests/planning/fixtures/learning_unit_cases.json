@@ -1,0 +1,116 @@
+{
+  "purpose": "development_reference_only",
+  "reference_status": "draft_for_human_review",
+  "cases": [
+    {
+      "case_id": "trading_l1",
+      "filename": "L1 Algorithmic trading basics and financial markets File.pdf",
+      "expected_page_count": 59,
+      "preferred_unit_count": 2,
+      "reference_units": [
+        {
+          "title": "Algorithmic Trading and Market Foundations",
+          "page_ranges": [[1, 22]],
+          "note": "Pages 1 and 2 provide orientation. The main teaching content is on pages 3 to 22."
+        },
+        {
+          "title": "Market Terminology and Trading Mechanics",
+          "page_ranges": [[23, 59]],
+          "note": "Pages 23 and 24 introduce the terminology section. Page 59 is a document summary."
+        }
+      ],
+      "checks": [
+        "Prefer the two broad learning scopes over one unit per terminology item.",
+        "Keep related order-book, quote, spread and order-execution content together within the major scope.",
+        "Do not create standalone units for the cover, agenda or final summary.",
+        "Retain image-only pages and resolve their membership using available context."
+      ]
+    },
+    {
+      "case_id": "mobile_lifecycle",
+      "filename": "COMP7506_Ch4_Lifecycle.pdf",
+      "expected_page_count": 17,
+      "preferred_unit_count": 1,
+      "reference_units": [
+        {
+          "title": "Mobile Application Development Lifecycle",
+          "page_ranges": [[1, 17]],
+          "note": "The lifecycle stages are related parts of one learning scope. Orientation and closing pages do not become separate units."
+        }
+      ],
+      "checks": [
+        "Prefer one coherent unit for the complete lifecycle.",
+        "Keep the major stages as internal concepts.",
+        "Do not treat every slide bookmark as a chapter.",
+        "Do not request image inspection when titles and nearby text already establish membership."
+      ]
+    },
+    {
+      "case_id": "android_workshop",
+      "filename": "Android_WS2.pdf",
+      "expected_page_count": 7,
+      "preferred_unit_count": 1,
+      "reference_units": [
+        {
+          "title": "Building a Course List with RecyclerView and Activity Data Passing",
+          "page_ranges": [[1, 7]],
+          "note": "The numbered instructions contribute to one working application feature."
+        }
+      ],
+      "checks": [
+        "Prefer one complete workshop unit.",
+        "Do not turn numbered steps, lettered items or Roman numerals into separate chapters automatically.",
+        "Retain layout, adapter, data-passing and testing content.",
+        "Distinguish reading the instructions from actually completing the workshop."
+      ]
+    },
+    {
+      "case_id": "mit_data_structures",
+      "filename": "79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf",
+      "expected_page_count": 5,
+      "preferred_unit_count": 1,
+      "reference_units": [
+        {
+          "title": "Data Structure Interfaces and Sequence Implementations",
+          "page_ranges": [[1, 4]],
+          "note": "Page 5 is attribution material rather than a separate teaching unit."
+        }
+      ],
+      "checks": [
+        "Prefer one coherent unit for the short handout.",
+        "Recognize that page 1 already contains teaching content.",
+        "Retain sequence and set interfaces, arrays, linked lists, dynamic arrays and amortized analysis.",
+        "Do not omit a second topic merely because its page has already been referenced.",
+        "Retain page 5 in the document inventory and identify its non-instructional role."
+      ]
+    },
+    {
+      "case_id": "fraud_introduction",
+      "filename": "FITE7410_L01_Fraud_Detection_Prevention_and_Analytics (2).pdf",
+      "expected_page_count": 70,
+      "preferred_unit_count": null,
+      "reference_units": [],
+      "checks": [
+        "Group related fraud-type explanations despite changing slide titles.",
+        "Use reliable major scopes without treating every heading as a chapter.",
+        "Keep related steps of the fraud analytics process together.",
+        "Retain diagrams and other pages with little extracted text.",
+        "Determine the final unit count through human review rather than a preset target."
+      ]
+    },
+    {
+      "case_id": "llm_training",
+      "filename": "Lecture_3_Training_and_Learning.pdf",
+      "expected_page_count": 130,
+      "preferred_unit_count": null,
+      "reference_units": [],
+      "checks": [
+        "Do not treat low extracted word counts as evidence of little teaching content.",
+        "Keep related formulas, component explanations and examples within coherent learning scopes.",
+        "Do not create a separate unit for every slide title.",
+        "Distinguish known chapter membership from unextracted visual knowledge.",
+        "Determine the final unit count through human review rather than a preset target."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+.study-settings {
+  max-width: 1000px;
+}
+
+.availability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 12px;
+}
+
+.availability-day {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.availability-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.availability-stepper output {
+  min-width: 56px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

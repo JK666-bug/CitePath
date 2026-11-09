@@ -118,3 +118,23 @@ def _payload(row: dict, segments: int, duplicate: bool) -> dict:
         "milvus_segments": segments,
         "duplicate": duplicate,
     }
+
+
+def load_document_source(user_id: int, course_id: int, document_id: int) -> dict | None:
+    """同时校验账号、课程及文件归属，返回原件定位信息。"""
+
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT d.id AS document_id, d.filename, d.content_hash
+                FROM documents AS d
+                JOIN courses AS c ON c.id = d.course_id
+                WHERE c.user_id = %s AND c.id = %s AND d.id = %s
+                """,
+                (user_id, course_id, document_id),
+            )
+            return cursor.fetchone()
+    finally:
+        connection.close()

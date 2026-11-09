@@ -5,7 +5,6 @@ import {
 } from '../../shared/format.ts'
 
 import {
-  decodeBrief,
   encodeBrief,
 } from '../courseEditor/brief.ts'
 
@@ -17,17 +16,15 @@ import type {
   Task,
 } from './types.ts'
 
+// 固定样例使用独立的时间预算，便于重复演示。
+export const DEMO_WEEKLY_MINUTES = 360
+
 export function scheduleDemo(
   plan: StudyPlan,
-  config: CourseConfig,
   reason: string,
 ): StudyPlan {
   let allocated = 0
-
-  const dailyMinutes = Math.max(
-    1,
-    (config.weeklyHours * 60) / 7,
-  )
+  const dailyMinutes = DEMO_WEEKLY_MINUTES / 7
 
   return {
     ...plan,
@@ -53,7 +50,6 @@ export function scheduleDemo(
 export function createDemo(): DemoState {
   const config: CourseConfig = {
     deadline: addDays(dateKey(), 21),
-    weeklyHours: 6,
     earlyDays: 2,
     note:
       'Prepare for the algorithms exam. Focus on trees, graphs, and dynamic programming. I know basic Python.',
@@ -156,7 +152,6 @@ export function createDemo(): DemoState {
         chapters,
         reason: '',
       },
-      config,
       'Initial sample schedule. No model was called.',
     ),
     sessions: {},
@@ -460,7 +455,6 @@ export function submitDemo(
     },
     plan: scheduleDemo(
       { ...state.plan, tasks },
-      decodeBrief(state.course.student_brief),
       passed
         ? 'Sample practice passed; remaining tasks rescheduled.'
         : 'Sample practice identified weak concepts; review retained in the schedule.',
